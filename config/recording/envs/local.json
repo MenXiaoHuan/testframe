@@ -1,0 +1,6 @@
+{
+  "baseURL": "https://localhost:5173",
+  "headers": {
+    "X-App-Env": "local"
+  }
+}
