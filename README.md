@@ -125,6 +125,20 @@ tests/codegen/<scene>.spec.ts
 - 视频
 - Trace
 
+当前报告展示策略：
+
+- 报告默认以中文展示关键模块和失败分类
+- 首页优先展示业务模块、失败项和关键证据
+- Trace 会作为附件保留，并附带本地打开说明
+- 执行环境信息会写入 `.allure-results/environment.properties`
+- 成功与失败场景都会保留截图、视频和 Trace
+
+如需本地直接打开 Trace，可使用：
+
+```bash
+npx playwright show-trace .playwright-artifacts/<case-folder>/trace.zip
+```
+
 相关配置位于 [playwright.config.ts](file:///Users/bytedance/playwright_framework/playwright.config.ts)。
 
 ## Common Commands

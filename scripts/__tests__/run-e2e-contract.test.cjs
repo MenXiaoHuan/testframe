@@ -31,3 +31,8 @@ test('package scripts route all test commands through the unified runner', () =>
   assert.equal(packageJson.scripts.report, 'npm run report:open');
   assert.equal(packageJson.scripts['report:open'], 'npx allure open ./reports/allure-report');
 });
+
+test('report command remains an alias to report:open', () => {
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+  assert.equal(packageJson.scripts.report, 'npm run report:open');
+});

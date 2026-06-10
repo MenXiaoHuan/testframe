@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import config from '../../playwright.config';
 import {
   buildAllureEnvironmentInfo,
   buildTraceGuidance,
@@ -63,4 +64,39 @@ test('buildTraceGuidance returns Chinese instructions for a trace archive', () =
   assert.match(text, /Trace 附件/);
   assert.match(text, /npx playwright show-trace/);
   assert.match(text, /trace\.zip/);
+});
+
+test('deriveAllureMetadata keeps story names clean for report homepage display', () => {
+  const metadata = deriveAllureMetadata({
+    cwd: '/repo',
+    file: '/repo/tests/codegen/login.spec.ts',
+    title: '  登录成功   @smoke  ',
+  });
+
+  assert.equal(metadata.storyName, '登录成功');
+  assert.equal(metadata.featureName, '录制稿');
+});
+
+test('playwright config keeps Chinese environment info enabled for allure report output', () => {
+  const reporters = Array.isArray(config.reporter) ? config.reporter : [];
+  const allureReporter = reporters.find(
+    (item): item is [string, Record<string, unknown>] =>
+      Array.isArray(item) && item[0] === 'allure-playwright'
+  );
+
+  assert.ok(allureReporter, 'expected allure-playwright reporter config to exist');
+
+  const [, options] = allureReporter;
+  const environmentInfo = options.environmentInfo as Record<string, string>;
+
+  assert.equal(options.detail, true);
+  assert.deepEqual(Object.keys(environmentInfo), [
+    '执行模式',
+    '浏览器项目',
+    'Node 版本',
+    '操作系统',
+    '报告生成时间',
+    '站点配置模式',
+  ]);
+  assert.equal(environmentInfo['浏览器项目'], 'chromium');
 });

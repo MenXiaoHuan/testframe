@@ -33,6 +33,7 @@ export default defineConfig({
       'allure-playwright',
       {
         resultsDir: './.allure-results',
+        // Keep detail enabled so failed cases still expose useful steps and attachments.
         detail: true,
         suiteTitle: true,
         categories: [
