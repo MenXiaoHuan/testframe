@@ -154,7 +154,7 @@ npx playwright show-trace .playwright-artifacts/<case-folder>/trace.zip
 | `npm run test:interview-login` | 执行登录单场景测试，默认带 `--headed` |
 | `npm run codegen:interview-login` | 启动基础登录录制会话 |
 | `npm run codegen:interview-login:admin` | 启动管理员登录录制会话，固化 `--env local --role admin` |
-| `npm run report` | 打开已有 Allure 报告 |
+| `npm run report:open` | 打开已有 Allure 报告 |
 
 ## Recording Configuration
 
@@ -277,7 +277,7 @@ npm run test:e2e
 如果报告已生成但没有打开：
 
 ```bash
-npm run report
+npm run report:open
 ```
 
 ## Conventions

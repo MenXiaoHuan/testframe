@@ -1,7 +1,6 @@
 function detectCi(env = {}) {
   return (
     env.CI === 'true' ||
-    env.CI === '1' ||
     env.GITHUB_ACTIONS === 'true' ||
     env.BUILDKITE === 'true' ||
     env.GITLAB_CI === 'true'

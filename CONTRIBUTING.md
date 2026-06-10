@@ -82,7 +82,7 @@ npm run codegen:interview-login:admin
 打开报告：
 
 ```bash
-npm run report
+npm run report:open
 ```
 
 ## Project Conventions

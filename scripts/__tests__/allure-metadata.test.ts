@@ -7,13 +7,14 @@ import {
   buildTraceGuidance,
   cleanTitle,
   deriveAllureMetadata,
+  isCiEnvironment,
 } from '../../utils/allureMetadata';
 
 test('cleanTitle removes tags and duplicate spaces', () => {
   assert.equal(cleanTitle('输入正确的账号和密码 @smoke   @login'), '输入正确的账号和密码');
 });
 
-test('deriveAllureMetadata maps known test directories to Chinese business modules', () => {
+test('deriveAllureMetadata keeps raw suite values without hard-coded Chinese mapping', () => {
   const metadata = deriveAllureMetadata({
     cwd: '/repo',
     file: '/repo/tests/interview_agent/login/login.spec.ts',
@@ -21,21 +22,21 @@ test('deriveAllureMetadata maps known test directories to Chinese business modul
   });
 
   assert.deepEqual(metadata, {
-    parentSuiteName: '端到端自动化',
-    featureName: '面试助手',
+    parentSuiteName: 'Playwright E2E',
+    featureName: 'interview_agent',
     subSuiteName: 'login.spec',
     storyName: '输入正确的账号和密码',
   });
 });
 
-test('deriveAllureMetadata falls back to original directory name when no Chinese mapping exists', () => {
+test('deriveAllureMetadata falls back to original directory name when no feature grouping exists', () => {
   const metadata = deriveAllureMetadata({
     cwd: '/repo',
-    file: '/repo/tests/unknown_group/example/demo.spec.ts',
+    file: '/repo/tests/root.spec.ts',
     title: '示例用例',
   });
 
-  assert.equal(metadata.featureName, 'unknown_group');
+  assert.equal(metadata.featureName, 'root');
 });
 
 test('buildAllureEnvironmentInfo returns Chinese keys and human-readable values', () => {
@@ -52,7 +53,13 @@ test('buildAllureEnvironmentInfo returns Chinese keys and human-readable values'
   assert.equal(info['浏览器项目'], 'chromium');
   assert.equal(info['Node 版本'], 'v25.9.0');
   assert.equal(info['操作系统'], 'darwin 24.5.0');
-  assert.equal(info['报告生成时间'], '2026-06-10 10:00:00');
+  assert.equal('报告生成时间' in info, false);
+  assert.equal('站点配置模式' in info, false);
+});
+
+test('isCiEnvironment treats CI=1 as local so local runs keep local behavior', () => {
+  assert.equal(isCiEnvironment({ CI: '1' }), false);
+  assert.equal(isCiEnvironment({ CI: 'true' }), true);
 });
 
 test('buildTraceGuidance returns Chinese instructions for a trace archive', () => {
@@ -74,7 +81,7 @@ test('deriveAllureMetadata keeps story names clean for report homepage display',
   });
 
   assert.equal(metadata.storyName, '登录成功');
-  assert.equal(metadata.featureName, '录制稿');
+  assert.equal(metadata.featureName, 'codegen');
 });
 
 test('playwright config keeps Chinese environment info enabled for allure report output', () => {
@@ -95,8 +102,6 @@ test('playwright config keeps Chinese environment info enabled for allure report
     '浏览器项目',
     'Node 版本',
     '操作系统',
-    '报告生成时间',
-    '站点配置模式',
   ]);
   assert.equal(environmentInfo['浏览器项目'], 'chromium');
 });

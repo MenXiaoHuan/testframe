@@ -2,7 +2,7 @@ import os from 'node:os';
 
 import { defineConfig, devices } from '@playwright/test';
 import { Status } from 'allure-js-commons';
-import { buildAllureEnvironmentInfo } from './utils/allureMetadata';
+import { buildAllureEnvironmentInfo, isCiEnvironment } from './utils/allureMetadata';
 
 const sharedUse = {
   viewport: { width: 1440, height: 900 },
@@ -26,7 +26,7 @@ export default defineConfig({
   timeout: 30 * 1000,
   retries: 1,
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
+  forbidOnly: isCiEnvironment(process.env),
   reporter: [
     ['list'],
     [

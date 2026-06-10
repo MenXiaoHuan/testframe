@@ -28,11 +28,11 @@ test('package scripts route all test commands through the unified runner', () =>
     'node ./scripts/run-e2e.cjs --target tests/interview_agent/login/login.spec.ts --headed'
   );
   assert.equal(packageJson.scripts['test:ci'], 'CI=true node ./scripts/run-e2e.cjs');
-  assert.equal(packageJson.scripts.report, 'npm run report:open');
-  assert.equal(packageJson.scripts['report:open'], 'npx allure open ./reports/allure-report');
+  assert.equal('report' in packageJson.scripts, false);
+  assert.equal(packageJson.scripts['report:open'], 'node ./scripts/open-report.cjs');
 });
 
-test('report command remains an alias to report:open', () => {
+test('report script is removed so report:open stays the only entrypoint', () => {
   const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-  assert.equal(packageJson.scripts.report, 'npm run report:open');
+  assert.equal('report' in packageJson.scripts, false);
 });
