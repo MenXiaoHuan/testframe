@@ -33,6 +33,13 @@ function cleanupPaths(deps = {}) {
   remove('./.playwright-artifacts', { recursive: true, force: true });
 }
 
+function cleanupRuntimeArtifacts(deps = {}) {
+  const remove = deps.rmSync ?? rmSync;
+
+  remove('./.allure-results', { recursive: true, force: true });
+  remove('./.playwright-artifacts', { recursive: true, force: true });
+}
+
 function resolveExitCode(testStatus, reportStatus) {
   if ((testStatus ?? 1) !== 0) {
     return testStatus ?? 1;
@@ -77,6 +84,7 @@ function runE2E(deps = {}) {
   const options = parseArgs(argv);
   const runSync = deps.runSync;
   const cleanup = deps.cleanup ?? cleanupPaths;
+  const cleanupArtifacts = deps.cleanupRuntimeArtifacts ?? cleanupRuntimeArtifacts;
   const openReport = deps.openReport ?? createOpenReport();
   const customizeReport = deps.customizeReport ?? patchGeneratedReportShell;
 
@@ -94,6 +102,10 @@ function runE2E(deps = {}) {
     customizeReport();
   }
 
+  if ((testResult.status ?? 1) === 0 && (reportResult.status ?? 1) === 0) {
+    cleanupArtifacts();
+  }
+
   if ((reportResult.status ?? 1) === 0 && !isCi) {
     openReport();
   }
@@ -109,6 +121,7 @@ module.exports = {
   REPORT_ARGS,
   REPORT_HIDDEN_LABELS,
   cleanupPaths,
+  cleanupRuntimeArtifacts,
   createOpenReport,
   createRunSync,
   patchGeneratedReportShell,

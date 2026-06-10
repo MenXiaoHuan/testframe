@@ -126,6 +126,7 @@ tests/codegen/<scene>.spec.ts
 - Trace 会作为附件保留，并附带本地打开说明
 - 执行环境信息会写入 `.allure-results/environment.properties`
 - 成功与失败场景都会保留截图、视频和 Trace
+- 报告生成成功后会自动清理 `/.allure-results` 和 `/.playwright-artifacts` 两个中间目录
 
 如需本地直接打开 Trace，可使用：
 
@@ -143,7 +144,8 @@ npx playwright show-trace .playwright-artifacts/<case-folder>/trace.zip
 4. 调用 `npx playwright test ...` 执行用例
 5. 调用 `npx allure awesome ./.allure-results --output ./reports/allure-report` 生成 HTML 报告
 6. 通过 [allure-report-shell.cjs](file:///Users/bytedance/playwright_framework/scripts/lib/allure-report-shell.cjs) 对生成后的 `index.html` 做二次 patch
-7. 本地环境自动执行 [open-report.cjs](file:///Users/bytedance/playwright_framework/scripts/open-report.cjs) 打开 `./reports/allure-report`
+7. 仅当测试执行成功且报告生成成功时，自动删除 `./.allure-results` 与 `./.playwright-artifacts`
+8. 本地环境自动执行 [open-report.cjs](file:///Users/bytedance/playwright_framework/scripts/open-report.cjs) 打开 `./reports/allure-report`
 
 报告后处理主要负责：
 
@@ -280,18 +282,6 @@ npm run test:e2e:headed
 npm run test:e2e:debug
 ```
 
-### 为什么会报 `net::ERR_CERT_AUTHORITY_INVALID`？
-
-- 本地开发环境通常使用自签名证书
-- 当前 [playwright.config.ts](file:///Users/bytedance/playwright_framework/playwright.config.ts#L6-L12) 已开启 `ignoreHTTPSErrors: true`
-- 如果你没有走项目封装命令，仍然可能遇到证书问题
-
-推荐直接使用项目脚本：
-
-```bash
-npm run codegen:interview-login
-```
-
 ### 为什么提示 `No tests found`？
 
 - Playwright 默认只识别符合测试命名约定的文件
@@ -316,38 +306,3 @@ npm run test:e2e
 ```bash
 npm run report:open
 ```
-
-### 为什么我看到主工作区和 `.worktrees` 里都有 `reports/`？
-
-- 因为 Git worktree 本质上就是一份独立工作目录
-- 每个工作目录都可能执行自己的测试和报告生成命令
-- 所以每个工作目录都保留自己的 `reports/`
-
-当前仓库里可以这样区分：
-
-- `/Users/bytedance/playwright_framework/reports`：主工作区报告目录
-- `/Users/bytedance/playwright_framework/.worktrees/feature-reporting-optimization/reports`：该 feature worktree 的报告目录
-
-如果主工作区下的 `reports/` 里当前只有 `.gitkeep`，说明这个目录只是被预留出来，还没有保留一份需要提交的静态报告产物。
-
-## Conventions
-
-- 测试文件统一使用 `*.spec.ts`
-- 页面对象推荐使用 `*Page.ts`
-- 录制产物默认落在 `tests/codegen/`
-- 整理后的正式业务用例应迁移到业务目录
-- Allure 元数据由 [allure.ts](file:///Users/bytedance/playwright_framework/utils/allure.ts) 自动补充
-
-## For Contributors
-
-如果你想扩展这个项目，建议优先关注这些文件：
-
-- [playwright.config.ts](file:///Users/bytedance/playwright_framework/playwright.config.ts)
-- [run-e2e.cjs](file:///Users/bytedance/playwright_framework/scripts/run-e2e.cjs)
-- [run-codegen.cjs](file:///Users/bytedance/playwright_framework/scripts/run-codegen.cjs)
-- [run-e2e-core.cjs](file:///Users/bytedance/playwright_framework/scripts/lib/run-e2e-core.cjs)
-- [run-codegen-core.cjs](file:///Users/bytedance/playwright_framework/scripts/lib/run-codegen-core.cjs)
-
-## License
-
-当前 `package.json` 中配置为 `ISC`。

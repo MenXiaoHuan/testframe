@@ -1,165 +1,104 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const {
-  cleanupPaths,
-  createOpenReport,
-  resolveExitCode,
-  runE2E,
-} = require('../lib/run-e2e-core.cjs');
+const { runE2E } = require('../lib/run-e2e-core.cjs');
 
-test('cleanupPaths deletes the known artifact directories', () => {
-  const removed = [];
-
-  cleanupPaths({
-    rmSync(pathname, options) {
-      removed.push([pathname, options]);
-    },
-  });
-
-  assert.deepEqual(removed, [
-    ['./.allure-results', { recursive: true, force: true }],
-    ['./reports/allure-report', { recursive: true, force: true }],
-    ['./.playwright-artifacts', { recursive: true, force: true }],
-  ]);
-});
-
-test('resolveExitCode prefers test failures over report failures', () => {
-  assert.equal(resolveExitCode(1, 0), 1);
-  assert.equal(resolveExitCode(1, 2), 1);
-  assert.equal(resolveExitCode(0, 2), 2);
-  assert.equal(resolveExitCode(0, 0), 0);
-});
-
-test('runE2E executes tests then generates report and auto-opens locally', () => {
+function createRunSyncStub(statuses) {
   const calls = [];
-  let opened = false;
+  let index = 0;
 
-  const result = runE2E({
-    argv: ['--target', 'tests/interview_agent/login/login.spec.ts'],
-    env: {},
+  return {
+    calls,
     runSync(command, args) {
-      calls.push([command, args]);
-      return { status: 0 };
+      calls.push({ command, args });
+      const status = statuses[index] ?? 0;
+      index += 1;
+      return { status };
     },
-    openReport() {
-      opened = true;
-    },
+  };
+}
+
+test('runE2E removes runtime artifacts after report generation succeeds', () => {
+  const cleanupCalls = [];
+  const runtimeCleanupCalls = [];
+  const customizeCalls = [];
+  const openCalls = [];
+  const { runSync } = createRunSyncStub([0, 0]);
+
+  const result = runE2E({
+    argv: [],
+    env: {},
+    runSync,
     cleanup() {
-      calls.push(['cleanup', []]);
+      cleanupCalls.push('pre');
     },
-  });
-
-  assert.deepEqual(calls, [
-    ['cleanup', []],
-    ['npx', ['playwright', 'test', 'tests/interview_agent/login/login.spec.ts']],
-    [
-      'npx',
-      [
-        'allure',
-        'awesome',
-        './.allure-results',
-        '--output',
-        './reports/allure-report',
-        '--report-name',
-        'Allure 自动化测试报告',
-        '--report-language',
-        'zh',
-        '--hide-labels',
-        'package',
-        '--hide-labels',
-        'feature',
-        '--hide-labels',
-        'titlePath',
-        '--hide-labels',
-        'parentSuite',
-        '--hide-labels',
-        'subSuite',
-        '--hide-labels',
-        'host',
-        '--hide-labels',
-        'thread',
-      ],
-    ],
-  ]);
-  assert.equal(opened, true);
-  assert.equal(result.exitCode, 0);
-});
-
-test('runE2E does not auto-open report in CI mode', () => {
-  let opened = false;
-
-  const result = runE2E({
-    argv: [],
-    env: { CI: 'true' },
-    runSync() {
-      return { status: 0 };
+    cleanupRuntimeArtifacts() {
+      runtimeCleanupCalls.push('post');
+    },
+    customizeReport() {
+      customizeCalls.push('patched');
     },
     openReport() {
-      opened = true;
+      openCalls.push('opened');
     },
-    cleanup() {},
   });
 
-  assert.equal(opened, false);
   assert.equal(result.exitCode, 0);
+  assert.deepEqual(cleanupCalls, ['pre']);
+  assert.deepEqual(runtimeCleanupCalls, ['post']);
+  assert.deepEqual(customizeCalls, ['patched']);
+  assert.deepEqual(openCalls, ['opened']);
 });
 
-test('runE2E returns test failure even when report generation also fails', () => {
-  let runCount = 0;
+test('runE2E keeps runtime artifacts when tests fail even if report generation succeeds', () => {
+  const runtimeCleanupCalls = [];
+  const customizeCalls = [];
+  const openCalls = [];
+  const { runSync } = createRunSyncStub([1, 0]);
 
   const result = runE2E({
     argv: [],
-    env: { CI: 'true' },
-    runSync() {
-      runCount += 1;
-      return runCount === 1 ? { status: 1 } : { status: 2 };
-    },
-    openReport() {},
+    env: {},
+    runSync,
     cleanup() {},
+    cleanupRuntimeArtifacts() {
+      runtimeCleanupCalls.push('post');
+    },
+    customizeReport() {
+      customizeCalls.push('patched');
+    },
+    openReport() {
+      openCalls.push('opened');
+    },
   });
 
-  assert.equal(result.testStatus, 1);
-  assert.equal(result.reportStatus, 2);
   assert.equal(result.exitCode, 1);
+  assert.deepEqual(runtimeCleanupCalls, []);
+  assert.deepEqual(customizeCalls, ['patched']);
+  assert.deepEqual(openCalls, ['opened']);
 });
 
-test('createOpenReport launches allure open as a detached local process', () => {
-  let unrefCalled = false;
-  let captured = null;
+test('runE2E keeps runtime artifacts when report customization fails', () => {
+  const runtimeCleanupCalls = [];
+  const { runSync } = createRunSyncStub([0, 0]);
 
-  const openReport = createOpenReport({
-    spawn(command, args, options) {
-      captured = { command, args, options };
-      return {
-        unref() {
-          unrefCalled = true;
+  assert.throws(
+    () =>
+      runE2E({
+        argv: [],
+        env: {},
+        runSync,
+        cleanup() {},
+        cleanupRuntimeArtifacts() {
+          runtimeCleanupCalls.push('post');
         },
-      };
-    },
-  });
+        customizeReport() {
+          throw new Error('patch failed');
+        },
+        openReport() {},
+      }),
+    /patch failed/
+  );
 
-  openReport();
-
-  assert.deepEqual(captured.command, 'npx');
-  assert.deepEqual(captured.args, ['allure', 'open', './reports/allure-report']);
-  assert.equal(captured.options.detached, true);
-  assert.equal(captured.options.stdio, 'ignore');
-  assert.equal(unrefCalled, true);
-});
-
-test('cleanupPaths keeps report generation directories aligned with trace artifact flow', () => {
-  const removed = [];
-
-  cleanupPaths({
-    rmSync(pathname, options) {
-      removed.push([pathname, options]);
-    },
-  });
-
-  assert.deepEqual(removed.map(([pathname]) => pathname), [
-    './.allure-results',
-    './reports/allure-report',
-    './.playwright-artifacts',
-  ]);
+  assert.deepEqual(runtimeCleanupCalls, []);
 });
