@@ -11,8 +11,7 @@
     "test:e2e:debug": "node ./scripts/run-e2e.cjs --debug",
     "test:ci": "CI=true node ./scripts/run-e2e.cjs",
 
-    "report": "npm run report:open",
-    "report:open": "npx allure open ./reports/allure-report",
+    "report:open": "node ./scripts/open-report.cjs",
 
 
     "codegen:interview-login": "node ./scripts/run-codegen.cjs --name login --url https://localhost:5173/#/pages/login/index",

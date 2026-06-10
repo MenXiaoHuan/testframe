@@ -1,8 +1,8 @@
-import path from 'node:path';
-
 import { expect, test as base } from '@playwright/test';
 import {
+  ContentType,
   Severity,
+  attachment,
   feature,
   owner,
   parentSuite,
@@ -10,29 +10,31 @@ import {
   story,
   subSuite,
 } from 'allure-js-commons';
-
-function cleanTitle(value: string): string {
-  return value.replace(/@\w+/g, '').replace(/\s+/g, ' ').trim();
-}
+import { buildTraceGuidance, deriveAllureMetadata } from './allureMetadata';
 
 export const test = base;
 
 test.beforeEach(async ({}, testInfo) => {
-  const relativeFile = path.relative(process.cwd(), testInfo.file);
-  const segments = relativeFile.split(path.sep);
-  const testsIndex = segments.indexOf('tests');
-  const testSegments = testsIndex >= 0 ? segments.slice(testsIndex + 1) : segments;
-  const suiteGroup = testSegments.length > 1 ? testSegments[0] : 'root';
-  const fileName = path.basename(relativeFile, path.extname(relativeFile));
-  const testCaseTitle = cleanTitle(testInfo.title);
+  const metadata = deriveAllureMetadata({
+    cwd: process.cwd(),
+    file: testInfo.file,
+    title: testInfo.title,
+  });
 
-  await parentSuite('Playwright E2E');
-  await feature(suiteGroup);
-  await story(testCaseTitle || fileName);
-  await subSuite(fileName);
+  await parentSuite(metadata.parentSuiteName);
+  await feature(metadata.featureName);
+  await story(metadata.storyName);
+  await subSuite(metadata.subSuiteName);
   await owner('QA');
-
   await severity(Severity.MINOR);
+  await attachment(
+    'Trace 使用说明',
+    buildTraceGuidance({
+      traceName: 'trace.zip',
+      tracePath: `${testInfo.outputDir}/trace.zip`,
+    }),
+    ContentType.TEXT
+  );
 });
 
 export { expect };

@@ -7,15 +7,17 @@ const {
   buildPlaywrightArgs,
 } = require('../lib/run-e2e-options.cjs');
 
-test('detectCi returns true for common CI flags', () => {
+test('detectCi returns true for explicit CI providers and flags', () => {
   assert.equal(detectCi({ CI: 'true' }), true);
   assert.equal(detectCi({ GITHUB_ACTIONS: 'true' }), true);
   assert.equal(detectCi({ BUILDKITE: 'true' }), true);
+  assert.equal(detectCi({ GITLAB_CI: 'true' }), true);
 });
 
-test('detectCi returns false for local env', () => {
+test('detectCi returns false for local env values, including CI=1', () => {
   assert.equal(detectCi({}), false);
   assert.equal(detectCi({ CI: 'false' }), false);
+  assert.equal(detectCi({ CI: '1' }), false);
 });
 
 test('parseArgs handles file target and headed flag', () => {

@@ -72,12 +72,6 @@ npm run codegen -- --name login --project chromium --url https://localhost:5173/
 npm run codegen -- --name login --env local --role admin --url https://localhost:5173/#/pages/login/index
 ```
 
-带临时请求头录制：
-
-```bash
-npm run codegen -- --name login --env local --role admin --header "X-Trace-Id=trace-001" --url https://localhost:5173/#/pages/login/index
-```
-
 ## Core Workflows
 
 ### 1. Unified Test Runner
@@ -127,6 +121,47 @@ tests/codegen/<scene>.spec.ts
 
 相关配置位于 [playwright.config.ts](file:///Users/bytedance/playwright_framework/playwright.config.ts)。
 
+当前统一报告链路如下：
+
+1. 执行 [run-e2e.cjs](file:///Users/bytedance/playwright_framework/scripts/run-e2e.cjs)
+2. 进入 [run-e2e-core.cjs](file:///Users/bytedance/playwright_framework/scripts/lib/run-e2e-core.cjs)
+3. 先清理当前工作目录下的 `./.allure-results`、`./reports/allure-report`、`./.playwright-artifacts`
+4. 调用 `npx playwright test ...` 执行用例
+5. 调用 `npx allure awesome ./.allure-results --output ./reports/allure-report` 生成 HTML 报告
+6. 通过 [allure-report-shell.cjs](file:///Users/bytedance/playwright_framework/scripts/lib/allure-report-shell.cjs) 对生成后的 `index.html` 做二次 patch
+7. 本地环境自动执行 [open-report.cjs](file:///Users/bytedance/playwright_framework/scripts/open-report.cjs) 打开 `./reports/allure-report`
+
+报告后处理主要负责：
+
+- 强制报告 UI 默认中文
+- 默认折叠 Metadata / Variables
+- 隐藏 `feature`、`package`、`host`、`thread` 等高噪音标签
+- 保持 `story`、`severity`、`owner`、`suite` 等核心信息
+
+### 4. Report Output Scope
+
+报告输出目录是相对“你当前执行命令时所在的工作目录”计算的。
+
+例如：
+
+- 你在主工作区 `/Users/bytedance/playwright_framework` 执行测试，报告会生成到 `/Users/bytedance/playwright_framework/reports/allure-report`
+- 你在 worktree `/Users/bytedance/playwright_framework/.worktrees/feature-reporting-optimization` 执行测试，报告会生成到 `/Users/bytedance/playwright_framework/.worktrees/feature-reporting-optimization/reports/allure-report`
+
+这两个 `reports/` 不是同一份内容，而是两个独立工作区各自的产物目录。
+
+可以这样理解：
+
+- 主工作区有自己的 `package.json`、`scripts/`、`reports/`
+- 每个 worktree 也有自己独立的 `package.json`、`scripts/`、`reports/`
+- 统一 Runner 始终只操作“当前工作区”下的报告目录，不会跨目录复用另一边的报告
+
+因此，如果你看到：
+
+- `/Users/bytedance/playwright_framework/reports`
+- `/Users/bytedance/playwright_framework/.worktrees/feature-reporting-optimization/reports`
+
+这是正常现象，不是重复实现，而是 Git worktree 的天然隔离结果。
+
 ## Common Commands
 
 项目脚本定义位于 [package.json](file:///Users/bytedance/playwright_framework/package.json)。
@@ -140,7 +175,7 @@ tests/codegen/<scene>.spec.ts
 | `npm run test:interview-login` | 执行登录单场景测试，默认带 `--headed` |
 | `npm run codegen:interview-login` | 启动基础登录录制会话 |
 | `npm run codegen:interview-login:admin` | 启动管理员登录录制会话，固化 `--env local --role admin` |
-| `npm run report` | 打开已有 Allure 报告 |
+| `npm run report:open` | 打开已有 Allure 报告 |
 
 ## Recording Configuration
 
@@ -253,6 +288,8 @@ npm run codegen:interview-login
 
 - 只有走统一 Runner 的测试命令时，才会自动触发项目内的报告编排逻辑
 - 如果你直接执行 `playwright test`，不会自动打开报告
+- `npm run report:open` 只负责打开当前工作区里已经存在的报告，不会重新跑测试
+- 如果你切到了 worktree 目录再执行命令，打开的是 worktree 自己的 `reports/allure-report`
 
 本地推荐使用：
 
@@ -263,8 +300,21 @@ npm run test:e2e
 如果报告已生成但没有打开：
 
 ```bash
-npm run report
+npm run report:open
 ```
+
+### 为什么我看到主工作区和 `.worktrees` 里都有 `reports/`？
+
+- 因为 Git worktree 本质上就是一份独立工作目录
+- 每个工作目录都可能执行自己的测试和报告生成命令
+- 所以每个工作目录都保留自己的 `reports/`
+
+当前仓库里可以这样区分：
+
+- `/Users/bytedance/playwright_framework/reports`：主工作区报告目录
+- `/Users/bytedance/playwright_framework/.worktrees/feature-reporting-optimization/reports`：该 feature worktree 的报告目录
+
+如果主工作区下的 `reports/` 里当前只有 `.gitkeep`，说明这个目录只是被预留出来，还没有保留一份需要提交的静态报告产物。
 
 ## Conventions
 
