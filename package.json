@@ -13,7 +13,7 @@
 
     "report:open": "node ./scripts/open-report.cjs",
 
-    "trace:open": "npx playwright show-trace \"./reports/allure-report/data/attachments/2463779b5d486a0328da4fd4714e4600.zip\"",
+    "trace:open": "node ./scripts/open-trace.cjs",
 
     "codegen:interview-login": "node ./scripts/run-codegen.cjs --name login --url https://localhost:5173/#/pages/login/index",
     "codegen:interview-login:admin": "node ./scripts/run-codegen.cjs --name login --env local --role admin --url https://localhost:5173/#/pages/login/index",
