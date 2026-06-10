@@ -13,7 +13,10 @@ test('injectReportShell appends a single report customization script and style b
   assert.match(firstPass, /report-default-metadata/);
   assert.match(firstPass, /report-default-variables/);
   assert.doesNotMatch(firstPass, /report-quick-filters-hidden/);
-  assert.equal(secondPass.match(/allure-report-ui-customizations/g)?.length, 1);
+  assert.equal(
+    secondPass.match(/allure-report-ui-customizations/g)?.length,
+    1,
+  );
 });
 
 test('injectReportShell keeps the injected customization script syntactically valid', () => {

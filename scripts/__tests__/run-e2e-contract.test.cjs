@@ -20,6 +20,5 @@ test('package scripts route report access through the unified opener only', () =
 
 test('legacy report alias is removed so report:open stays the single entrypoint', () => {
   const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-
   assert.equal('report' in packageJson.scripts, false);
 });

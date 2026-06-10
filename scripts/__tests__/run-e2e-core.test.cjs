@@ -147,3 +147,19 @@ test('createOpenReport launches allure open as a detached local process', () => 
   assert.equal(captured.options.stdio, 'ignore');
   assert.equal(unrefCalled, true);
 });
+
+test('cleanupPaths keeps report generation directories aligned with trace artifact flow', () => {
+  const removed = [];
+
+  cleanupPaths({
+    rmSync(pathname, options) {
+      removed.push([pathname, options]);
+    },
+  });
+
+  assert.deepEqual(removed.map(([pathname]) => pathname), [
+    './.allure-results',
+    './reports/allure-report',
+    './.playwright-artifacts',
+  ]);
+});
