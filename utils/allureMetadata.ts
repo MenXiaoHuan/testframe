@@ -47,3 +47,15 @@ export function buildAllureEnvironmentInfo(input: {
     站点配置模式: 'group_context',
   };
 }
+
+export function buildTraceGuidance(input: {
+  traceName: string;
+  tracePath: string;
+}) {
+  return [
+    `Trace 附件：${input.traceName}`,
+    `Trace 路径：${input.tracePath}`,
+    `本地打开命令：npx playwright show-trace ${input.tracePath}`,
+    '建议优先在失败用例中查看 Trace、截图和错误上下文，快速定位页面状态和操作轨迹。',
+  ].join('\n');
+}

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   buildAllureEnvironmentInfo,
+  buildTraceGuidance,
   cleanTitle,
   deriveAllureMetadata,
 } from '../../utils/allureMetadata';
@@ -51,4 +52,15 @@ test('buildAllureEnvironmentInfo returns Chinese keys and human-readable values'
   assert.equal(info['Node 版本'], 'v25.9.0');
   assert.equal(info['操作系统'], 'darwin 24.5.0');
   assert.equal(info['报告生成时间'], '2026-06-10 10:00:00');
+});
+
+test('buildTraceGuidance returns Chinese instructions for a trace archive', () => {
+  const text = buildTraceGuidance({
+    traceName: 'trace.zip',
+    tracePath: '.playwright-artifacts/login/trace.zip',
+  });
+
+  assert.match(text, /Trace 附件/);
+  assert.match(text, /npx playwright show-trace/);
+  assert.match(text, /trace\.zip/);
 });

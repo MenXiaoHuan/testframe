@@ -1,6 +1,8 @@
 import { expect, test as base } from '@playwright/test';
 import {
+  ContentType,
   Severity,
+  attachment,
   feature,
   owner,
   parentSuite,
@@ -8,7 +10,7 @@ import {
   story,
   subSuite,
 } from 'allure-js-commons';
-import { deriveAllureMetadata } from './allureMetadata';
+import { buildTraceGuidance, deriveAllureMetadata } from './allureMetadata';
 
 export const test = base;
 
@@ -25,6 +27,14 @@ test.beforeEach(async ({}, testInfo) => {
   await subSuite(metadata.subSuiteName);
   await owner('QA');
   await severity(Severity.MINOR);
+  await attachment(
+    'Trace 使用说明',
+    buildTraceGuidance({
+      traceName: 'trace.zip',
+      tracePath: `${testInfo.outputDir}/trace.zip`,
+    }),
+    ContentType.TEXT
+  );
 });
 
 export { expect };
