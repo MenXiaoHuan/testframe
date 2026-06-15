@@ -1,7 +1,8 @@
-import type { SetupGroupContextOptions } from '../../utils/groupContext';
+import type { GroupTestOptions } from '../../utils/groupContext';
 
 export const interviewLoginGroupConfig = {
   baseURL: 'https://localhost:5173',
+  initialURL: '/#/pages/login/index',
   headers: undefined,
   cookies: []
-} satisfies SetupGroupContextOptions;
+} satisfies GroupTestOptions;
