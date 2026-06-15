@@ -1,6 +1,6 @@
 import os from 'node:os';
 
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, type ReporterDescription } from '@playwright/test';
 import { Status } from 'allure-js-commons';
 import { buildAllureEnvironmentInfo, isCiEnvironment } from './utils/allureMetadata';
 
@@ -23,7 +23,7 @@ const environmentInfo = buildAllureEnvironmentInfo({
   osRelease: os.release(),
 });
 
-const reporters = [
+const reporters: ReporterDescription[] = [
   ['list'],
   [
     'allure-playwright',
