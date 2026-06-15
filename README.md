@@ -160,18 +160,13 @@ config/recording/roles/<role>.json
 - `--project chromium` 会带出默认浏览器 `chromium`
 - 如果同时指定 `--browser`，显式 `--browser` 优先
 
-## Project Layout
+## 目录职责说明：
 
-```text
-playwright_framework/
-├── config/
-│   ├── recording/              # 录制 Runner 的环境与角色配置
-│   └── test-groups/            # 分组与业务上下文配置
-├── pages/                      # 页面对象
-├── scripts/                    # 统一 runner、codegen 与相关测试
-├── tests/                      # Playwright 测试文件
-├── utils/                      # Allure 与上下文公共能力
-├── README.md
-├── package.json
-└── playwright.config.ts
-```
+- `config/recording/`：给 `run-codegen.cjs` 提供录制时使用的环境、角色和请求头配置
+- `config/test-groups/`：存放测试分组的业务上下文配置，便于多个用例复用同一套前置条件
+- `pages/`：页面对象层，封装页面元素定位和页面操作
+- `scripts/`：命令入口和脚本实现，主要包括 `run-codegen.cjs`、`run-e2e.cjs` 及其底层能力
+- `tests/codegen/`：录制生成或手工整理后的脚本草稿
+- `tests/interview_agent/`：业务测试用例目录，按模块继续拆分场景
+- `utils/`：通用能力封装，例如 Allure 元数据、分组上下文、公共测试基类
+- `playwright.config.ts`：Playwright 全局配置，集中管理 reporter、artifact、project 和默认执行参数
