@@ -18,30 +18,33 @@ export type GroupTestOptions = {
 
 export function createGroupTest(options: GroupTestOptions = {}) {
   const groupTest = test.extend({
-    context: async ({ browser }, use) => {
-      const context = await browser.newContext({
-        baseURL: options.baseURL,
-        extraHTTPHeaders: options.headers,
+    contextOptions: async ({ contextOptions }, use) => {
+      const mergedHeaders = {
+        ...(contextOptions.extraHTTPHeaders ?? {}),
+        ...(options.headers ?? {}),
+      };
+      await use({
+        ...contextOptions,
         ...options.contextOptions,
+        baseURL: options.baseURL ?? contextOptions.baseURL,
+        extraHTTPHeaders: Object.keys(mergedHeaders).length > 0 ? mergedHeaders : undefined,
       });
+    },
 
+    context: async ({ context }, use) => {
       if (options.cookies?.length) {
         await context.addCookies(options.cookies);
       }
 
       await use(context);
-      await context.close();
     },
 
-    page: async ({ context }, use) => {
-      const page = await context.newPage();
-
+    page: async ({ page }, use) => {
       if (options.initialURL) {
         await page.goto(options.initialURL);
       }
 
       await use(page);
-      await page.close();
     },
   });
 
